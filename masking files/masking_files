@@ -1,0 +1,44 @@
+# masking B4,B5 and B10 using Module
+# calling function mask_raster()
+
+import os
+from raster_masker import RasterMasker  # Import the RasterMasker class
+
+# Set environment settings (Change the path as per your Colab or Drive location)
+workspace = '/content/extracted_files/'
+workspace_shp = '/content/drive/MyDrive/Delhi/'
+output_workspace = '/content/output_files/'
+
+# Ensure the output directory exists
+if not os.path.exists(output_workspace):
+    os.makedirs(output_workspace)
+
+# Input raster files to be masked (bands 4, 5, 10, and 11)
+input_rasters = {
+    "B4": os.path.join(workspace, "LC09_L1TP_146040_20230602_20230602_02_T1_B4.TIF"),
+    "B5": os.path.join(workspace, "LC09_L1TP_146040_20230602_20230602_02_T1_B5.TIF"),
+    "B10": os.path.join(workspace, "LC09_L1TP_146040_20230602_20230602_02_T1_B10.TIF"),
+    "B11": os.path.join(workspace, "LC09_L1TP_146040_20230602_20230602_02_T1_B11.TIF")
+}
+
+# Mask shapefile (area of interest)
+mask_shapefile = os.path.join(workspace_shp, "Delhi_UTM.shp")
+
+# Initialize the RasterMasker with the shapefile path
+masker = RasterMasker(mask_shapefile)
+
+# Perform extraction by mask for each band
+for band_name, input_raster in input_rasters.items():
+    output_raster = os.path.join(output_workspace, f"delhi_extracted_{band_name}.tif")
+    masker.mask_raster(input_raster, output_raster)
+    print(f"Extraction of band {band_name} completed. Output saved as {output_raster}")
+
+# Optionally, visualize the extracted raster
+import matplotlib.pyplot as plt
+import rasterio.plot
+
+output_raster_path = os.path.join(output_workspace, "delhi_extracted_B10.tif")
+with rasterio.open(output_raster_path) as src:
+    fig, ax = plt.subplots(figsize=(10, 10))
+    rasterio.plot.show(src, ax=ax)
+    plt.show()
