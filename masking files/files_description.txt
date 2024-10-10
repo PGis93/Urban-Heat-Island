@@ -1,0 +1,3 @@
+the files in this folder includes:
+raster_masker: Module where we are define the code for masking the files
+masking_files: Masking the B4, B5 and B10 bands as per our AOI.
