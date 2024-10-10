@@ -1,0 +1,55 @@
+# making module for masking outputs
+# provides a function to mask our output
+
+%%writefile raster_masker.py
+
+import os
+import rasterio
+import geopandas as gpd
+from rasterio.mask import mask
+from shapely.geometry import mapping
+
+class RasterMasker:
+    def __init__(self, shapefile_path):
+        """
+        Initialize the RasterMasker with the path to the shapefile.
+
+        :param shapefile_path: Path to the shapefile to be used for masking.
+        """
+        if not os.path.isfile(shapefile_path):
+            raise FileNotFoundError(f"Shapefile not found: {shapefile_path}")
+
+        self.shapefile_path = shapefile_path
+        self.geometry = self._load_shapefile()
+
+    def _load_shapefile(self):
+        """
+        Load the shapefile and extract the geometry.
+
+        :return: List of geometries extracted from the shapefile.
+        """
+        shapefile = gpd.read_file(self.shapefile_path)
+        return [mapping(geom) for geom in shapefile.geometry]
+
+    def mask_raster(self, input_raster_path, output_raster_path):
+        """
+        Mask the input raster using the provided shapefile and save the output.
+
+        :param input_raster_path: Path to the input raster file.
+        :param output_raster_path: Path where the masked raster file will be saved.
+        """
+        if not os.path.isfile(input_raster_path):
+            raise FileNotFoundError(f"Input raster file not found: {input_raster_path}")
+
+        with rasterio.open(input_raster_path) as src:
+            out_image, out_transform = mask(src, self.geometry, crop=True)
+            out_meta = src.meta.copy()
+            out_meta.update({"driver": "GTiff",
+                             "height": out_image.shape[1],
+                             "width": out_image.shape[2],
+                             "transform": out_transform})
+
+            with rasterio.open(output_raster_path, "w", **out_meta) as dest:
+                dest.write(out_image)
+
+        print(f"Masking complete. Output saved to {output_raster_path}")
