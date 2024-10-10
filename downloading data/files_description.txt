@@ -1,0 +1,5 @@
+The list of files provided here includes:
+installing_libraries: Installing all the required libraries for the whole project
+drive_mount: Mounting the google drive in order to access the shapefiles need for the concerned 'Area of Interest'.
+downloading_data: Downloading the Landsat 8 & 9 data , through API for Earth explorer website. (more details availiable in UHI_full_notebook.ipynb file)
+extrating_files: Extraction of files from the tar file format into seperate files.
