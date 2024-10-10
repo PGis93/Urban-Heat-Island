@@ -1,0 +1,74 @@
+# this code prompts user to enter your USGS credentials
+# allows to select a scene with date info
+
+from landsatxplore.api import API
+from landsatxplore.earthexplorer import EarthExplorer
+import getpass
+import os
+from datetime import datetime, timedelta
+
+# Prompt user for username and password (password input is hidden)
+username = input("Enter your EarthExplorer username: ")
+password = getpass.getpass("Enter your EarthExplorer password: ")
+
+# Initialize a new API instance and get an API key
+api = API(username, password)
+
+# Search for Landsat 8/9 scenes in the specified date range
+scenes = api.search(
+    dataset='landsat_ot_c2_l1',  # dataset identifier for Landsat 8/9 Collection 2 Level 1 data
+    latitude=28.6139,
+    longitude=77.2090,
+    start_date='2023-05-15',
+    end_date='2023-06-15',
+    max_cloud_cover=20
+)
+
+# Print the number of scenes found
+print(f"{len(scenes)} scenes found.")
+
+# Function to convert Julian Day to a date
+def julian_day_to_date(year, julian_day):
+    return datetime(year, 1, 1) + timedelta(days=julian_day - 1)
+
+# Display the list of scenes for user selection
+print("\nAvailable Scenes:")
+for index, scene in enumerate(scenes):
+    display_id = scene.get('displayId', scene['entity_id'])
+
+    # Extract the year and Julian Day from displayId
+    year = int(display_id[9:13])
+    julian_day = int(display_id[13:16])
+
+    # Convert Julian Day to standard date
+    acquisition_date = julian_day_to_date(year, julian_day).strftime('%Y-%m-%d')
+
+    print(f"{index + 1}. {display_id} - {acquisition_date}")
+
+# Prompt the user to select which scenes to download
+selected_indices = input("\nEnter the numbers of the scenes you want to download (comma-separated): ")
+selected_indices = [int(i.strip()) - 1 for i in selected_indices.split(',')]
+
+# Initialize a new EarthExplorer instance
+ee = EarthExplorer(username, password)
+
+# Download each selected scene
+output_dir = '/content/landsat8_data'
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+
+for index in selected_indices:
+    scene = scenes[index]
+    entity_id = scene['entity_id']
+    display_id = scene.get('displayId', entity_id)
+
+    print(f"Downloading all files for {display_id}...")
+
+    # Download the entire scene
+    ee.download(entity_id, output_dir)
+
+# Logout from EarthExplorer
+ee.logout()
+
+# Logout from the API
+api.logout()
