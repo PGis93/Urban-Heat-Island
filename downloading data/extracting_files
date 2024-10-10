@@ -1,0 +1,20 @@
+# for extracting tar file in the colab itself
+
+import tarfile
+import os
+
+# Define the path to the .tar file
+tar_file_path = '/content/landsat8_data/LC09_L1TP_146040_20230602_20230602_02_T1.tar'
+
+# Define the extraction directory
+extraction_path = '/content/extracted_files/'
+
+# Create the extraction directory if it doesn't exist
+if not os.path.exists(extraction_path):
+    os.makedirs(extraction_path)
+
+# Open the .tar file and extract all its contents
+with tarfile.open(tar_file_path, 'r') as tar_file:
+    tar_file.extractall(path=extraction_path)
+
+print(f'Files extracted to {extraction_path}')
