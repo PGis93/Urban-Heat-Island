@@ -1,3 +1,4 @@
 the files in this folder includes:
 raster_masker: Module where we are define the code for masking the files
 masking_files: Masking the B4, B5 and B10 bands as per our AOI.
+folium_overlap: Overlapping file on the folium map to show covergae of AOI.
