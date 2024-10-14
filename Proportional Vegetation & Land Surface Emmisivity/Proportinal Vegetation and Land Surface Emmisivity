@@ -1,1 +1,67 @@
+# proportional vegetation and Land Surface Emmisivity
 
+import os
+import rasterio
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Define the working directory (update the path accordingly)
+workspace = "/content/output_files/"
+os.chdir(workspace)
+
+# Input NDVI raster
+ndvi_raster = "NDVI.tif"
+
+# Output filenames
+output_pv = "proportional_vegetation.tif"
+output_emissivity = "land_surface_emissivity.tif"
+
+try:
+    # Load NDVI raster
+    with rasterio.open(ndvi_raster) as src:
+        ndvi = src.read(1).astype(float)
+        profile = src.profile
+
+    # Find the minimum and maximum NDVI values
+    ndvi_min = np.nanmin(ndvi)
+    ndvi_max = np.nanmax(ndvi)
+
+    # Print NDVI min and max values for verification
+    print("NDVI Min:", ndvi_min)
+    print("NDVI Max:", ndvi_max)
+
+    # Calculate Fraction of Vegetation Cover (FVC) using the updated formula
+    pv = ((ndvi - ndvi_min) / (ndvi_max - ndvi_min)) ** 2
+
+    # Update profile for PV output
+    profile.update(dtype=rasterio.float32, count=1)
+
+    # Save the PV raster
+    with rasterio.open(output_pv, 'w', **profile) as dst:
+        dst.write(pv.astype(rasterio.float32), 1)
+    print("Proportional vegetation cover calculation completed. Output saved as", output_pv)
+
+    # Calculate Land Surface Emissivity using PV
+    emissivity = ((0.004 * pv) + 0.986)
+
+    # Save the emissivity raster
+    with rasterio.open(output_emissivity, 'w', **profile) as dst:
+        dst.write(emissivity.astype(rasterio.float32), 1)
+    print("Land surface emissivity calculation completed. Output saved as", output_emissivity)
+
+     # Display PV
+    plt.figure(figsize=(10, 10))
+    plt.imshow(pv, cmap='BuGn')
+    plt.title("Proportinal Vegetation")
+    plt.colorbar()
+    plt.show()
+
+    # Display Land Surface Emissivity
+    plt.figure(figsize=(10, 10))
+    plt.imshow(emissivity, cmap='inferno')
+    plt.title("Land Surface Emissivity")
+    plt.colorbar()
+    plt.show()
+
+except Exception as e:
+    print(f"Error occurred: {e}")
