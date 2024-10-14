@@ -10,14 +10,9 @@ from raster_masker import RasterMasker  # Import your custom RasterMasker module
 # Define the parameters for Landsat 8 Band 10
 radiance_mult = 0.0003342
 radiance_add = 0.1
-#LMIN = 0.10033      # Minimum spectral radiance (W/(m^2 * sr * µm))
-#LMAX = 22.00180     # Maximum spectral radiance (W/(m^2 * sr * µm))
-#QCALMIN = 0         # Minimum quantized calibrated pixel value
-#QCALMAX = 65535     # Maximum quantized calibrated pixel value
 
 # Function to convert DN to TOA Radiance
 def dn_to_toa_radiance(DN,radiance_mult, radiance_add):
-   # return LMIN + (LMAX - LMIN) * ((DN - QCALMIN) / (QCALMAX - QCALMIN))
     return (radiance_mult * DN) + radiance_add
 
 # Paths to input and output files
