@@ -1,0 +1,56 @@
+# Brightness Temperature
+
+import numpy as np
+import rasterio
+import matplotlib.pyplot as plt
+from rasterio.plot import show
+from raster_masker import RasterMasker  # Import the custom RasterMasker module
+
+# Define the parameters for Landsat 8 Band 10
+K1 = 774.89     # K1 constant for Landsat 8 Band 10
+K2 = 1321.08    # K2 constant for Landsat 8 Band 10
+
+# Function to convert TOA Radiance to At-Sensor Temperature
+def toa_radiance_to_temperature(toa_radiance, K1, K2):
+    # Avoid division by zero by adding a small constant to the denominator
+    small_value = 1e-10
+    toa_radiance = np.maximum(toa_radiance, small_value)
+
+    # Convert TOA radiance to temperature in Celsius
+    temperature_kelvin = K2 / np.log((K1 / toa_radiance) + 1)
+    temperature_celsius = temperature_kelvin - 273.15
+    return temperature_celsius
+
+# Paths to input and output files
+input_file = '/content/output_files/radiance.tif'
+output_file = '/content/output_files/Intermediate_BT.tif'
+shapefile_path = '/content/drive/MyDrive/Mask/Delhi_UTM.shp'
+masked_output_file = '/content/output_files/BrightnessTemperature.tif'
+
+# Open the input raster file to read TOA radiance
+with rasterio.open(input_file) as src:
+    # Read the TOA radiance values from the first band
+    toa_radiance = src.read(1)
+
+    # Convert TOA Radiance to At-Sensor Temperature
+    temperature = toa_radiance_to_temperature(toa_radiance, K1, K2)
+
+    # Copy the metadata for the output file
+    metadata = src.meta.copy()
+    metadata.update(dtype=rasterio.float32, count=1)
+
+    # Save the Temperature data to a new raster file
+    with rasterio.open(output_file, 'w', **metadata) as dst:
+        dst.write(temperature.astype(rasterio.float32), 1)
+
+# Mask the output using RasterMasker
+masker = RasterMasker(shapefile_path)
+masker.mask_raster(output_file, masked_output_file)
+
+print(f"Temperature data calculated and masked. Output saved as: {masked_output_file}")
+
+# Display the final masked output
+with rasterio.open(masked_output_file) as masked_src:
+    fig, ax = plt.subplots(figsize=(10, 10))
+    show(masked_src, ax=ax, title="Brightness Temperature-Band 10")
+    plt.show()
