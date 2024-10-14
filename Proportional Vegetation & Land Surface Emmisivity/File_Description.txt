@@ -1,0 +1,4 @@
+This folder contains a file having code for calculatiing Proportional Vegetation and Land Surface Emmisivity :
+Proportional Vegetation : is calculated from output received from NDVI raster file and saved.
+Land Surface Emmisivity : is calculated from output received from Proportional Vegetation Raster file and Saved.
+Both the generated Rasters are displayed.
