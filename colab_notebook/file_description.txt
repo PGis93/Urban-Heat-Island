@@ -1,0 +1,2 @@
+This folder contains the complete Google Colab notebook for executing the entire process of extracting, processing, and analyzing Landsat 8 and 9 data. 
+It includes all steps necessary for calculating Land Surface Temperature (LST) and Urban Heat Island (UHI) effect in the NCT of Delhi.
