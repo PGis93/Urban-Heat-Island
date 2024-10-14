@@ -1,0 +1,4 @@
+This Folder contains two files :
+1. Radiance : Define the parameters for Landsat 8 Band 10 from MetaData and calculate Radiance with DN value provided in extracted Band 10.
+2. Brightness Temperature : Define the parameters for Landsat 8 Band 10 from MetaData and calculate Brightness Temperature with Radiance calculated in previous step.
+   Convert Brightness Temperature into celcius.
