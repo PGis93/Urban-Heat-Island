@@ -1,1 +1,56 @@
+# radiance 
+
+import os
+import numpy as np
+import rasterio
+import matplotlib.pyplot as plt
+from rasterio.plot import show
+from raster_masker import RasterMasker  # Import your custom RasterMasker module
+
+# Define the parameters for Landsat 8 Band 10
+radiance_mult = 0.0003342
+radiance_add = 0.1
+#LMIN = 0.10033      # Minimum spectral radiance (W/(m^2 * sr * µm))
+#LMAX = 22.00180     # Maximum spectral radiance (W/(m^2 * sr * µm))
+#QCALMIN = 0         # Minimum quantized calibrated pixel value
+#QCALMAX = 65535     # Maximum quantized calibrated pixel value
+
+# Function to convert DN to TOA Radiance
+def dn_to_toa_radiance(DN,radiance_mult, radiance_add):
+   # return LMIN + (LMAX - LMIN) * ((DN - QCALMIN) / (QCALMAX - QCALMIN))
+    return (radiance_mult * DN) + radiance_add
+
+# Paths to input and output files
+input_file = '/content/output_files/delhi_extracted_B10.tif'
+output_file = '/content/output_files/intermediate_radiance.tif'
+shapefile_path = '/content/drive/MyDrive/Mask/Delhi_UTM.shp'
+masked_output_file = '/content/output_files/radiance.tif'
+
+# Open the input raster file to read digital numbers
+with rasterio.open(input_file) as src:
+    # Read the digital numbers from the first band
+    dn = src.read(1)
+
+    # Convert DN to TOA Radiance
+    toa_radiance = dn_to_toa_radiance(dn,radiance_mult,radiance_add)
+
+    # Copy the metadata for the output file
+    metadata = src.meta.copy()
+    metadata.update(dtype=rasterio.float32, count=1)
+
+    # Save the TOA Radiance to a new raster file
+    with rasterio.open(output_file, 'w', **metadata) as dst:
+        dst.write(toa_radiance.astype(rasterio.float32), 1)
+
+# Mask the TOA radiance raster using the RasterMasker class
+masker = RasterMasker(shapefile_path)
+masker.mask_raster(output_file, masked_output_file)
+
+print(f"TOA Radiance calculated and masked. Output saved as: {masked_output_file}")
+
+# Display the masked output
+with rasterio.open(masked_output_file) as masked_src:
+    fig, ax = plt.subplots(figsize=(10, 10))
+    show(masked_src, ax=ax, title="Radiance (Band 10)")
+    plt.show()
 
