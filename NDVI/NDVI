@@ -1,0 +1,49 @@
+# NDVI calculation using pylandtemp
+
+import os
+import rasterio
+import pylandtemp as pt
+from pylandtemp import ndvi
+import matplotlib.pyplot as plt
+
+# Define the working directory
+workspace = "/content/output_files/"
+os.chdir(workspace)
+
+# Input Landsat 8 bands (Update paths as needed)
+band4_path = os.path.join(workspace, "sun_ref_cor_B4.tif")  # Red band
+band5_path = os.path.join(workspace, "sun_ref_cor_B5.tif")  # Near Infrared (NIR) band
+
+# Output NDVI file path
+output_ndvi_path = os.path.join(workspace, "NDVI.tif")
+
+try:
+    with rasterio.open(band4_path) as src:
+        redImage = src.read(1).astype('f4')
+        profile = src.profile  # Save profile to use for NDVI output
+
+    with rasterio.open(band5_path) as src:
+        nirImage = src.read(1).astype('f4')
+
+    # NDVI calculation using pylandtemp
+    mask = redImage == 0
+    ndvi = pt.ndvi(nirImage, redImage, mask=mask)
+
+    # Update profile for NDVI output
+    profile.update(dtype=rasterio.float32, count=1)
+
+    # Save NDVI output to file
+    with rasterio.open(output_ndvi_path, 'w', **profile) as dst:
+        dst.write(ndvi.astype(rasterio.float32), 1)
+
+    print("NDVI calculation completed and saved at:", output_ndvi_path)
+
+    # Optional: Display the NDVI
+    plt.figure(figsize=(10, 10))
+    plt.imshow(ndvi, cmap='YlGn')
+    plt.title("NDVI")
+    plt.colorbar()
+    plt.show()
+
+except Exception as e:
+    print(f"Error occurred: {e}")
