@@ -1,0 +1,66 @@
+#LST
+
+import os
+import rasterio
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Define the working directory (update the path accordingly)
+workspace = "/content/output_files/"
+os.chdir(workspace)
+
+# Input brightness temperature and land surface emissivity rasters
+bt_raster = "BT_band10.tif"
+lse_raster = "land_surface_emissivity.tif"
+
+# Output Land Surface Temperature raster
+output_lst = "land_surface_temperature.tif"
+
+try:
+    # Load brightness temperature raster
+    with rasterio.open(bt_raster) as src_bt:
+        bt = src_bt.read(1).astype(float)
+        bt_profile = src_bt.profile
+
+    # Load land surface emissivity raster
+    with rasterio.open(lse_raster) as src_lse:
+        lse = src_lse.read(1).astype(float)
+
+    # Define constants
+    constant1 = 0.00115
+    constant2 = 1.4388
+
+    # Calculate LST using the given formula
+    lst = bt / (1 + (constant1 * bt / constant2) * np.log(lse))
+
+    # Calculate statistics
+    min_val = np.min(lst)
+    max_val = np.max(lst)
+    mean_val = np.mean(lst)
+    std_val = np.std(lst)
+
+    # Update profile for the output file
+    bt_profile.update(dtype=rasterio.float32, count=1)
+
+    # Save the LST raster with updated metadata
+    with rasterio.open(output_lst, 'w', **bt_profile) as dst:
+        dst.write(lst.astype(rasterio.float32), 1)
+
+        # Add statistics to metadata
+        dst.update_tags(
+            min_val=min_val,
+            max_val=max_val,
+            mean_val=mean_val,
+            std_val=std_val,
+            Statistics=f"Min: {min_val}, Max: {max_val}, Mean: {mean_val}, StdDev: {std_val}"
+        )
+
+    # Display the LST raster
+    plt.figure(figsize=(10, 10))
+    plt.imshow(lst, cmap='coolwarm')
+    plt.title("Land Surface Temperature (LST)")
+    plt.colorbar(label="Temperature (°C)")
+    plt.show()
+
+except Exception as e:
+    print(f"Error occurred: {e}")
