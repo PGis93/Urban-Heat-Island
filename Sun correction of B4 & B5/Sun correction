@@ -1,0 +1,94 @@
+# sun correction for b4 and b5 data
+# importing raster_masker
+
+import os
+import rasterio
+from rasterio.plot import show
+import numpy as np
+import matplotlib.pyplot as plt
+from raster_masker import RasterMasker
+
+# Define working directory
+workspace = "/content/output_files/"
+os.chdir(workspace)
+
+# Input Landsat 8 bands (Update paths as needed)
+band4_path = os.path.join(workspace, "delhi_extracted_B4.tif")  # Red band
+band5_path = os.path.join(workspace, "delhi_extracted_B5.tif")  # Near Infrared band
+
+# M_b4,M_b5, A_b4 and A_b5 values are taken from Metadata
+# Reflectance multiplication factors (M)
+M_b4 = 2.0000E-05
+M_b5 = 2.0000E-05
+
+# Reflectance additive factors (A)
+A_b4 = -0.100000
+A_b5 = -0.100000
+
+# Sun elevation angle in degrees
+sun_elevation = 68.82117212
+
+# Output sun-corrected reflectance bands
+output_b4_path = os.path.join(workspace, "B4_sun_cor_intermed.tif")
+output_b5_path = os.path.join(workspace, "B5_sun_cor_intermed.tif")
+
+try:
+    # Open the bands
+    with rasterio.open(band4_path) as band4_src:
+        band4 = band4_src.read(1).astype(float)
+        profile_b4 = band4_src.profile
+
+    with rasterio.open(band5_path) as band5_src:
+        band5 = band5_src.read(1).astype(float)
+        profile_b5 = band5_src.profile
+
+    # Perform sun correction
+    corrected_b4 = ((band4 * M_b4) + A_b4) / np.sin(np.radians(sun_elevation))
+    corrected_b5 = ((band5 * M_b5) + A_b5) / np.sin(np.radians(sun_elevation))
+
+    # Update profile for the output
+    profile_b4.update(dtype=rasterio.float32)
+    profile_b5.update(dtype=rasterio.float32)
+
+    # Save the output corrected reflectance bands
+    with rasterio.open(output_b4_path, 'w', **profile_b4) as sun_correction_b4:
+        sun_correction_b4.write(corrected_b4.astype(rasterio.float32), 1)
+
+    with rasterio.open(output_b5_path, 'w', **profile_b5) as sun_correction_b5:
+       sun_correction_b5.write(corrected_b5.astype(rasterio.float32), 1)
+
+    print("Sun-corrected reflectance calculation completed.")
+
+
+    # Paths
+    shapefile_path = '/content/drive/MyDrive/Delhi/Delhi_UTM.shp'
+    input_raster_path4 = '/content/output_files/B4_sun_cor_intermed.tif'
+    output_raster_path4 = '/content/output_files/sun_ref_cor_B4.tif'
+
+    input_raster_path5 = '/content/output_files/B5_sun_cor_intermed.tif'
+    output_raster_path5 = '/content/output_files/sun_ref_cor_B5.tif'
+
+    # Initialize the RasterMasker with the shapefile path
+    masker = RasterMasker(shapefile_path)
+
+    # Perform the masking operation
+    masker.mask_raster(input_raster_path4, output_raster_path4)
+    masker.mask_raster(input_raster_path5, output_raster_path5)
+
+    sun_ref_cor_b4= output_raster_path4
+    sun_ref_cor_b5= output_raster_path5
+
+     # Display the corrected and masked image of B4 band
+    with rasterio.open(output_raster_path4) as sun_ref_cor_b4:
+        fig, ax = plt.subplots(figsize=(10, 10))
+        show(sun_ref_cor_b4, ax=ax, title="Sun Corrected reflectance of B4")
+        plt.show()
+
+    # Display the corrected and masked image of B5 band
+    with rasterio.open(output_raster_path5) as sun_ref_cor_b5:
+        fig, ax = plt.subplots(figsize=(10, 10))
+        show(sun_ref_cor_b5, ax=ax, title="Sun Corrected reflectance of B5")
+        plt.show()
+
+except Exception as e:
+    print(f"Error occurred: {e}")
